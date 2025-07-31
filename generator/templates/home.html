@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Email Generator</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        textarea, input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 12px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+        }
+        pre {
+            white-space: pre-wrap;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Email Generator</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %};">
+                {{ message }}
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Email Generation Form -->
+    <form method="post">
+        {% csrf_token %}
+        <label for="tone">Select Tone:</label>
+        <select name="tone" id="tone" required>
+            <option value="">-- Select --</option>
+            <option value="professional" {% if tone == "professional" %}selected{% endif %}>Professional</option>
+            <option value="casual" {% if tone == "casual" %}selected{% endif %}>Casual</option>
+            <option value="apologetic" {% if tone == "apologetic" %}selected{% endif %}>Apologetic</option>
+            <option value="convincing" {% if tone == "convincing" %}selected{% endif %}>Convincing</option>
+        </select>
+
+        <label for="context">Context:</label>
+        <textarea name="context" id="context" rows="5" required>{{ context }}</textarea>
+
+        <button type="submit" name="generate">Generate Email</button>
+    </form>
+
+    {% if response %}
+        <hr>
+        <h2>Generated Email:</h2>
+        <pre>{{ response }}</pre>
+
+        <!-- Email Sending Form -->
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="email_content" value="{{ response }}">
+            <label for="recipient_email">Recipient Email:</label>
+            <input type="email" name="recipient_email" placeholder="example@email.com" required>
+            <button type="submit" name="send">Send Email</button>
+        </form>
+    {% endif %}
+</body>
+</html>
