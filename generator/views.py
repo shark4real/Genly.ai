@@ -2,6 +2,10 @@ from django.shortcuts import render
 from django.core.mail import EmailMessage
 from django.contrib import messages
 import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def generate_email(request):
     response_text = None
@@ -13,7 +17,7 @@ def generate_email(request):
 
             prompt = f"Write a {tone} email about the following situation:\n{context}"
 
-            api_key = "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"
+            api_key = os.getenv("API_KEY")
             headers = {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
