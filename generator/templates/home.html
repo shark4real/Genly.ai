@@ -58,16 +58,46 @@
     {% if response %}
         <hr>
         <h2>Generated Email:</h2>
-        <pre>{{ response }}</pre>
+        <pre id="generated-email">{{ response }}</pre>
 
         <!-- Email Sending Form -->
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="email_content" value="{{ response }}">
+        <form onsubmit="return openGmailCompose();">
             <label for="recipient_email">Recipient Email:</label>
-            <input type="email" name="recipient_email" placeholder="example@email.com" required>
-            <button type="submit" name="send">Send Email</button>
+            <input type="email" id="recipient_email" placeholder="example@email.com" required>
+            <button type="submit">Send via Gmail</button>
         </form>
     {% endif %}
+
+    <script>
+        function openGmailCompose() {
+            const recipient = document.getElementById("recipient_email").value;
+
+            // Get full email content
+            const fullText = document.getElementById("generated-email").innerText;
+
+            // Split the content into lines
+            const lines = fullText.split('\n');
+
+            // Extract subject as first non-empty line
+            let subject = "";
+            let startIndex = 0;
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].trim() !== "") {
+                    subject = lines[i].trim();
+                    startIndex = i + 1;
+                    break;
+                }
+            }
+
+            // Join the rest as body
+            const body = lines.slice(startIndex).join('\n').trim();
+
+            // Encode for URL
+            const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+            window.open(gmailURL, '_blank');
+            return false; // Prevent form submission
+        }
+    </script>
 </body>
 </html>
