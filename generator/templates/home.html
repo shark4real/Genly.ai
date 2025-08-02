@@ -4,29 +4,37 @@
     <title>Email Generator</title>
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             max-width: 700px;
             margin: 0 auto;
             padding: 30px;
         }
+
         textarea, input, select {
             width: 100%;
             padding: 10px;
             margin: 12px 0;
         }
+
         button {
             padding: 10px 20px;
             margin-top: 10px;
         }
+
         pre {
             white-space: pre-wrap;
             background: #f9f9f9;
             padding: 15px;
             border-radius: 5px;
         }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
+
     <h1>Email Generator</h1>
 
     {% if messages %}
@@ -37,66 +45,68 @@
         {% endfor %}
     {% endif %}
 
-    <!-- Email Generation Form -->
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
+
         <label for="tone">Select Tone:</label>
-        <select name="tone" id="tone" required>
-            <option value="">-- Select --</option>
+        <select name="tone" required>
             <option value="professional" {% if tone == "professional" %}selected{% endif %}>Professional</option>
             <option value="casual" {% if tone == "casual" %}selected{% endif %}>Casual</option>
-            <option value="apologetic" {% if tone == "apologetic" %}selected{% endif %}>Apologetic</option>
             <option value="convincing" {% if tone == "convincing" %}selected{% endif %}>Convincing</option>
+            <option value="apologetic" {% if tone == "apologetic" %}selected{% endif %}>Apologetic</option>
         </select>
 
         <label for="context">Context:</label>
-        <textarea name="context" id="context" rows="5" required>{{ context }}</textarea>
+        <textarea name="context" required>{{ context|default:'' }}</textarea>
 
-        <button type="submit" name="generate">Generate Email</button>
+        <label for="send_option">Send Mode:</label>
+        <select name="send_option" id="send_option" onchange="toggleMode()" required>
+            <option value="" disabled selected>Select Mode</option>
+            <option value="single" {% if send_option == "single" %}selected{% endif %}>Single Email</option>
+            <option value="bulk" {% if send_option == "bulk" %}selected{% endif %}>Bulk Email</option>
+        </select>
+
+        <button type="submit" name="generate">Generate</button>
     </form>
 
-    {% if response %}
-        <hr>
-        <h2>Generated Email:</h2>
-        <pre id="generated-email">{{ response }}</pre>
+    {% if subject and body and send_option == "single" %}
+        <h2>Email Preview</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="subject" value="{{ subject }}">
+            <input type="hidden" name="body" value="{{ body }}">
+            <input type="hidden" name="tone" value="{{ tone }}">
+            <input type="hidden" name="context" value="{{ context }}">
+            <input type="hidden" name="send_option" value="{{ send_option }}">
 
-        <!-- Email Sending Form -->
-        <form onsubmit="return openGmailCompose();">
+            <p><strong>Subject:</strong> {{ subject }}</p>
+            <pre>{{ body }}</pre>
+
             <label for="recipient_email">Recipient Email:</label>
-            <input type="email" id="recipient_email" placeholder="example@email.com" required>
-            <button type="submit">Send via Gmail</button>
+            <input type="email" name="recipient_email" required placeholder="example@email.com">
+            <button type="submit" name="send_single">Send via Gmail</button>
+        </form>
+    {% elif subject and body and send_option == "bulk" %}
+        <h2>Bulk Email Editor</h2>
+        <form method="post" action="/send-bulk/" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <label for="subject">Edit Subject:</label>
+            <input type="text" name="subject" id="subject" value="{{ subject }}" required>
+
+            <label for="body">Edit Body (use {{name}}, {{phone}}, etc.):</label>
+            <textarea name="body" id="body" rows="10" required>{{ body }}</textarea>
+
+            <label for="csv_file">Upload CSV File (must include 'email' column):</label>
+            <input type="file" name="csv_file" accept=".csv" required>
+
+            <button type="submit">Send All Emails</button>
         </form>
     {% endif %}
 
     <script>
-        function openGmailCompose() {
-            const recipient = document.getElementById("recipient_email").value;
-
-            // Get full email content
-            const fullText = document.getElementById("generated-email").innerText;
-
-            // Split the content into lines
-            const lines = fullText.split('\n');
-
-            // Extract subject as first non-empty line
-            let subject = "";
-            let startIndex = 0;
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].trim() !== "") {
-                    subject = lines[i].trim();
-                    startIndex = i + 1;
-                    break;
-                }
-            }
-
-            // Join the rest as body
-            const body = lines.slice(startIndex).join('\n').trim();
-
-            // Encode for URL
-            const gmailURL = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(recipient)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-            window.open(gmailURL, '_blank');
-            return false; // Prevent form submission
+        function toggleMode() {
+            // Controlled in backend, kept for future use
         }
     </script>
 </body>
