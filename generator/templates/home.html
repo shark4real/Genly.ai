@@ -92,9 +92,12 @@
         <label for="body">Edit Body (use &#123;&#123;name&#125;&#125;, &#123;&#123;phone&#125;&#125;, etc.):</label>
         <textarea name="body" id="body" rows="10" required>{{ body }}</textarea>
 
-
         <label for="csv_file">Upload CSV File (must include 'email' column):</label>
         <input type="file" name="csv_file" accept=".csv" required>
+
+        <!-- 📎 Attachments -->
+        <label for="attachments">Add Attachments (optional):</label>
+        <input type="file" name="attachments" multiple>
 
         {% if not is_authenticated %}
             <p style="color: red;">Login required to send bulk email.</p>

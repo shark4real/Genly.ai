@@ -3,7 +3,6 @@ import requests
 import csv
 import io
 import base64
-from jinja2 import Template
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
 from io import TextIOWrapper
@@ -15,6 +14,8 @@ from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from base64 import urlsafe_b64encode
 from urllib.parse import quote
 
@@ -25,12 +26,10 @@ load_dotenv()
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 CLIENT_SECRETS_FILE = os.path.join(os.path.dirname(__file__), '../client_secret.json')
 
-
 def parse_subject_and_body(text):
     lines = text.strip().split('\n', 1)
     subject = ""
     body = text
-
     if lines:
         first_line = lines[0].strip().lower()
         if first_line.startswith("subject:"):
@@ -39,7 +38,6 @@ def parse_subject_and_body(text):
         else:
             subject = "Generated Email"
     return subject, body.strip()
-
 
 def generate_email(request):
     if request.method == 'POST':
@@ -68,12 +66,10 @@ def generate_email(request):
             email_content = response.json()['choices'][0]['message']['content']
             subject, body = parse_subject_and_body(email_content)
 
-            # If it's a single email, open Gmail compose
             if send_option == 'single':
                 gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
                 return redirect(gmail_url)
 
-            # Save draft in session and redirect for authentication
             if 'credentials' not in request.session:
                 request.session['draft'] = {
                     'subject': subject,
@@ -84,7 +80,6 @@ def generate_email(request):
                 }
                 return redirect('authorize_gmail')
 
-            # Otherwise show bulk email editor
             return render(request, 'home.html', {
                 'subject': subject,
                 'body': body,
@@ -102,7 +97,6 @@ def generate_email(request):
         'is_authenticated': 'credentials' in request.session
     })
 
-
 def authorize_gmail(request):
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
@@ -113,17 +107,14 @@ def authorize_gmail(request):
     request.session['state'] = state
     return redirect(auth_url)
 
-
 def oauth2callback(request):
     state = request.session.get('state')
-
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
         state=state,
         redirect_uri='http://localhost:8000/oauth2callback/'
     )
-
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
 
@@ -150,17 +141,23 @@ def oauth2callback(request):
 
     return redirect('/')
 
-
-def create_message_raw(sender, to, subject, message_html):
-    message = MIMEMultipart('alternative')
+def create_message_raw(sender, to, subject, message_html, attachments=None):
+    message = MIMEMultipart()
     message['to'] = to
     message['from'] = sender
     message['subject'] = subject
 
-    # Optional plain version for fallback
     plain_text = message_html.replace('<br>', '\n').replace('&nbsp;', ' ')
     message.attach(MIMEText(plain_text, 'plain'))
     message.attach(MIMEText(message_html, 'html'))
+
+    if attachments:
+        for file in attachments:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(file.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f'attachment; filename="{file.name}"')
+            message.attach(part)
 
     return base64.urlsafe_b64encode(message.as_bytes()).decode()
 
@@ -168,28 +165,24 @@ def send_bulk_email(request):
     if request.method != 'POST':
         return redirect('home')
 
-    # Check Gmail login
     if 'credentials' not in request.session:
         messages.error(request, "Please log in with Gmail first.")
         return redirect('authorize_gmail')
 
-    # Load Gmail API credentials
     credentials = Credentials(**request.session['credentials'])
     service = build('gmail', 'v1', credentials=credentials)
-    print("Gmail credentials loaded:", credentials)
-    print("Is valid:", credentials.valid)
-    print("Expired:", credentials.expired)
 
     subject = request.POST.get('subject')
     body_template_str = request.POST.get('body')
     csv_file = request.FILES.get('csv_file')
+    attachments = request.FILES.getlist('attachments')
 
     if not csv_file:
         messages.error(request, "CSV file is required.")
         return redirect('home')
 
     try:
-        decoded_csv = csv_file.read().decode('utf-8-sig')  # handles BOM
+        decoded_csv = csv_file.read().decode('utf-8-sig')
         reader = csv.DictReader(io.StringIO(decoded_csv))
         rows = list(reader)
     except Exception as e:
@@ -200,7 +193,6 @@ def send_bulk_email(request):
         messages.error(request, "CSV is empty or missing headers.")
         return redirect('home')
 
-    # Compile Jinja template
     try:
         body_template = Template(body_template_str, undefined=StrictUndefined)
     except Exception as e:
@@ -212,7 +204,6 @@ def send_bulk_email(request):
 
     for index, row in enumerate(rows):
         try:
-            # Normalize keys (strip + lowercase)
             row = {k.strip().lower(): v.strip() for k, v in row.items()}
             to_email = row.get('email')
 
@@ -220,18 +211,16 @@ def send_bulk_email(request):
                 print(f"Row {index+1} skipped — missing 'email'")
                 continue
 
-            # Render subject and body with row data
-            personalized_body = body_template.render(row)
-            
             personalized_html = body_template.render(row).replace('\n', '<br>')
 
             raw_message = create_message_raw(
                 sender="me",
                 to=to_email,
                 subject=subject,
-                message_html=personalized_html
+                message_html=personalized_html,
+                attachments=attachments
             )
-            
+
             service.users().messages().send(
                 userId='me',
                 body={'raw': raw_message}
