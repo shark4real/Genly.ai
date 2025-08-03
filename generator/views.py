@@ -5,7 +5,6 @@ import io
 import base64
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
-from io import TextIOWrapper
 from dotenv import load_dotenv
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -16,7 +15,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from base64 import urlsafe_b64encode
+from django.urls import reverse
 from urllib.parse import quote
 
 # Allow OAuth2 over http (not recommended for production)
@@ -25,6 +24,28 @@ load_dotenv()
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 CLIENT_SECRETS_FILE = os.path.join(os.path.dirname(__file__), '../client_secret.json')
+
+def credentials_to_dict(credentials):
+    return {
+        'token': credentials.token,
+        'refresh_token': credentials.refresh_token,
+        'token_uri': credentials.token_uri,
+        'client_id': credentials.client_id,
+        'client_secret': credentials.client_secret,
+        'scopes': credentials.scopes
+    }
+
+def landing_page(request):
+    if 'credentials' in request.session:
+        return redirect('home')
+    return render(request, 'landing.html')
+
+def home(request):
+    if 'credentials' not in request.session:
+        return redirect('landing')
+    return render(request, 'home.html', {
+        'is_authenticated': True
+    })
 
 def parse_subject_and_body(text):
     lines = text.strip().split('\n', 1)
@@ -73,15 +94,15 @@ def generate_email(request):
                 gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
                 return redirect(gmail_url)
 
-            return render(request, 'home.html', {
+            # Fix for bulk preview without triggering send
+            request.session['bulk_data'] = {
                 'subject': subject,
                 'body': body,
                 'context': context,
                 'tone': tone,
-                'send_option': send_option,
-                'preview_mode': True,
-                'is_authenticated': True
-            })
+                'send_option': send_option
+            }
+            return redirect('bulk_preview')
 
         except Exception as e:
             messages.error(request, f"Unexpected error: {str(e)}")
@@ -89,6 +110,18 @@ def generate_email(request):
     return render(request, 'home.html', {
         'is_authenticated': 'credentials' in request.session
     })
+
+def bulk_preview(request):
+    data = request.session.pop('bulk_data', None)
+    if not data:
+        return redirect('home')
+
+    return render(request, 'home.html', {
+        **data,
+        'preview_mode': True,
+        'is_authenticated': True
+    })
+
 
 def authorize_gmail(request):
     flow = Flow.from_client_secrets_file(
@@ -111,14 +144,7 @@ def oauth2callback(request):
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
 
-    request.session['credentials'] = {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
-    }
+    request.session['credentials'] = credentials_to_dict(credentials)
 
     if 'draft' in request.session:
         draft = request.session.pop('draft')
@@ -132,18 +158,19 @@ def oauth2callback(request):
             'is_authenticated': True
         })
 
-    return redirect('/')
+    return redirect('home')
 
 def create_message_raw(sender, to, subject, message_html, attachments=None):
-    message = MIMEMultipart()
+    message = MIMEMultipart('mixed')
     message['to'] = to
     message['from'] = sender
     message['subject'] = subject
 
-    plain_text = message_html.replace('<br>', '\n').replace('&nbsp;', ' ')
-    message.attach(MIMEText(plain_text, 'plain'))
-    message.attach(MIMEText(message_html, 'html'))
+    # Only attach HTML content — remove plain text duplication
+    html_part = MIMEText(message_html, 'html')
+    message.attach(html_part)
 
+    # Attach files if any
     if attachments:
         for file in attachments:
             part = MIMEBase('application', 'octet-stream')
@@ -154,7 +181,9 @@ def create_message_raw(sender, to, subject, message_html, attachments=None):
 
     return base64.urlsafe_b64encode(message.as_bytes()).decode()
 
+
 def send_bulk_email(request):
+    print("🔥 Bulk email function triggered")
     if request.method != 'POST':
         return redirect('home')
 
@@ -219,7 +248,7 @@ def send_bulk_email(request):
                 body={'raw': raw_message}
             ).execute()
 
-            print(f"✅ Email sent to {to_email}")
+            #print(f"✅ Email sent to {to_email}")
             success_count += 1
 
         except UndefinedError as ue:
@@ -230,14 +259,4 @@ def send_bulk_email(request):
             failure_count += 1
 
     messages.success(request, f"{success_count} emails sent successfully. {failure_count} failed.")
-    return redirect('home')
-
-def credentials_to_dict(credentials):
-    return {
-        'token': credentials.token,
-        'refresh_token': credentials.refresh_token,
-        'token_uri': credentials.token_uri,
-        'client_id': credentials.client_id,
-        'client_secret': credentials.client_secret,
-        'scopes': credentials.scopes
-    }
+    return redirect(f"{reverse('home')}?sent=1")

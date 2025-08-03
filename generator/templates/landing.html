@@ -1,0 +1,166 @@
+{%load static%}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Genly.ai</title>
+
+    <!-- ✅ Add Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap" rel="stylesheet">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #FEFCFB;
+        }
+
+        .wrapper {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 7.5rem;
+            margin-bottom: 20px;
+            color: #000;
+        }
+
+        .tagline {
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 50px;
+            color: #333;
+        }
+
+        .login-button {
+            background-color: #040710ff;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            animation: float 2.5s ease-in-out infinite;
+        }
+
+        .login-button:hover {
+            background-color: #ffffff;
+            color: black;
+            border: 1px solid black;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.9rem;
+            color: #0A1128;
+            opacity: 0.8;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .footer a {
+            color: #001F54;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .typewriter {
+            font-size: 7.5rem;
+            overflow: hidden;
+            border-right: 4px solid black;
+            white-space: nowrap;
+            color: #001F54;
+            letter-spacing: 2px;
+            animation: typing 2s steps(10), blink 0.75s step-end infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0); }
+        }
+
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 9ch }
+        }
+
+        @keyframes blink {
+            50% { border-color: transparent }
+        }
+
+        @media (max-width: 768px) {
+            h1, .typewriter {
+                font-size: 5.5rem;
+                animation: typing 2s steps(10), blink 0.75s step-end infinite;
+            }
+
+            .tagline {
+                font-size: 1.1rem;
+                margin-bottom: 40px;
+                padding: 0 15px;
+            }
+
+            .login-button {
+                padding: 12px 24px;
+                font-size: 1.3rem;
+            }
+
+            .login-button img {
+                height: 27px !important;
+            }
+
+            .footer {
+                font-size: 0.8rem;
+                padding: 0 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h1 class='typewriter'>Genly.ai</h1>
+
+        <p class="tagline">Generate professional, casual, and bulk emails in seconds.</p>
+
+        <a href="{% url 'authorize_gmail' %}">
+            <button class="login-button">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="height:23px; vertical-align:middle; margin-right:8px; margin-top:-2.5px;">
+                Login with Google
+            </button>
+        </a>
+
+        <div class="footer">
+            Built by <strong>Sharik</strong> |
+            <a href="https://www.linkedin.com/in/sharik-hassan-98329724b/" target="_blank">
+                <img src="{% static 'linkedin.png' %}" alt="LinkedIn" style="height:18px; vertical-align:middle;margin-top: -3px;">
+            </a>
+
+        </div>
+    </div>
+</body>
+</html>

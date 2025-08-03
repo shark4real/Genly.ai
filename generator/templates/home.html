@@ -1,38 +1,219 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Email Generator</title>
+    <title>Genly.ai</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap" rel="stylesheet">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <style>
+
+        html, body {
+            overflow-x: hidden;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 30px;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #ffffff;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        textarea, input, select {
+
+        h1 {
+            position: absolute;
+            color:#001F54;
+            top: 30px;
+            left: 60px;
+            font-size: 3rem;
+            margin: 0;
+        }
+
+        h2 {
+            color:#001F54;
+            font-size: 3rem; 
+            left: 60px;
+        }
+
+        h2.h2 {
+            position: relative;
+            left: 60px;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-align: left;
+            width: 800px;
+            max-width: 800px;
+            margin-right: auto;
+        }
+
+        .bulk-send-form {
+            margin-top: 10px;
             width: 100%;
-            padding: 10px;
-            margin: 12px 0;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 12px;
         }
-        button {
-            padding: 10px 20px;
+
+        form {
+            margin-top: 55px;
+            width: 100%;
+            max-width: 800px;
+            padding: 30px;
+            border-radius: 12px;
+        }
+
+        label {
+            color: #000000ff;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 300;
+            margin-top: 20px;
+            display: block;
+        }
+
+        select, textarea, input[type="text"], input[type="file"], input[type="email"] {
+            font-family: 'Inter','sans-serif';
+            background: rgba(255, 255, 255, 0.1);
+            border: 1.1px solid black; 
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            color: #040710ff;
+            font-size: 0.8rem;
             margin-top: 10px;
         }
+
+        select:focus, textarea:focus, input:focus {
+            outline: 2px solid #001F54;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        .hovering-genly {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #001F54;
+            animation: floatGenly 7.5s ease-in-out infinite;
+        }
+
+        @keyframes floatGenly {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        button {
+            background-color: #001F54;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 24px;
+            font-family: 'Inter','sans-serif';
+            font-size: 1.3rem;
+            cursor: pointer;
+            margin-top: 25px;
+        }
+
+        button:hover {
+            background-color: #ffffff;
+            color: black;
+            border: 1px solid black;
+        }
+
         pre {
             white-space: pre-wrap;
             background: #f9f9f9;
             padding: 15px;
             border-radius: 5px;
+            font-size: 1rem;
         }
+
+        .info-icon {
+            display: inline-block;
+            margin-left: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: #555;
+        }
+
+        .info-icon:hover {
+            color: #001F54;
+        }
+
+        @media screen and (max-width: 600px) {
+            body {
+                overflow-x: hidden;
+                padding: 20px 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            h1.hovering-genly {
+                font-size: 3rem !important;
+                text-align: center !important;
+                position: static !important;
+                margin-bottom: 20px;
+            }
+
+            form, .bulk-send-form {
+                width: 100% !important;
+                max-width: 95% !important;
+                padding: 20px !important;
+                box-sizing: border-box;
+                margin: 0 auto !important;
+            }
+
+            h2.h2, h2 {
+                text-align: center !important;
+                left: 0 !important;
+                width: 100% !important;
+                margin: 20px auto !important;
+                font-size: 1.6rem !important;
+            }
+
+            label {
+                font-size: 1rem;
+                text-align: left;
+            }
+
+            input, select, textarea {
+                font-size: 1rem !important;
+                width: 100% !important;
+            }
+
+            textarea {
+                resize: vertical;
+            }
+
+            button {
+                font-size: 1.1rem !important;
+                display: block;
+                margin: 25px auto 0 auto;
+                width: auto;
+            }
+        }
+
+
     </style>
 </head>
 <body>
 
-<h1>Email Generator</h1>
+<h1 class="hovering-genly">Genly.ai</h1>
 
 {% if messages %}
     {% for message in messages %}
-        <p style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %};">
+        <p id="message" style="color: {% if message.tags == 'success' %}green{% else %}red{% endif %}; font-size: 1.3rem;">
             {{ message }}
         </p>
     {% endfor %}
@@ -46,23 +227,41 @@
 {% else %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <label for="tone">Select Tone:</label>
+        <label for="tone"> Email Tone:
+            <img src="{% static 'info.png' %}"
+                alt="info"
+                title="Select the style of the email — e.g., 'Professional' for formal messages, 'Casual' for friendly tone, 'Convincing' to persuade, or 'Apologetic' to express regret."
+                style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:3px;">
+        </label>
         <select name="tone" required>
+            <option value="" disabled {% if not tone %}selected{% endif %}>- Select -</option>
             <option value="professional" {% if tone == "professional" %}selected{% endif %}>Professional</option>
             <option value="casual" {% if tone == "casual" %}selected{% endif %}>Casual</option>
             <option value="convincing" {% if tone == "convincing" %}selected{% endif %}>Convincing</option>
             <option value="apologetic" {% if tone == "apologetic" %}selected{% endif %}>Apologetic</option>
         </select>
 
-        <label for="context">Context:</label>
-        <textarea name="context" required>{{ context|default:'' }}</textarea>
-
-        <label for="send_option">Send Mode:</label>
+        <label for="send_option">Audience Type:
+            <img src="{% static 'info.png' %}"
+                alt="info"
+                title="Choose 'Individual' to send one email or 'Group Send' for personalized bulk emails using a CSV."
+                style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:3px;">
+        </label>
         <select name="send_option" id="send_option" required>
-            <option value="" disabled {% if not send_option %}selected{% endif %}>Select Mode</option>
-            <option value="single" {% if send_option == "single" %}selected{% endif %}>Single Email</option>
-            <option value="bulk" {% if send_option == "bulk" %}selected{% endif %}>Bulk Email</option>
+            <option value="" disabled {% if not send_option %}selected{% endif %}>- Choose mode -</option>
+            <option value="single" {% if send_option == "single" %}selected{% endif %}>Individual</option>
+            <option value="bulk" {% if send_option == "bulk" %}selected{% endif %}>Group Send</option>
         </select>
+
+        <label for="context">
+            Message Brief:
+            <img src="{% static 'info.png' %}"
+                alt="info"
+                title="Briefly describe the purpose or situation. E.g., 'Requesting leave for two days due to illness' or 'Announcing a team meeting.'"
+                style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:3px;">
+        </label>
+
+        <textarea name="context" rows="3" placeholder="Type here" required>{{ context|default:'' }}</textarea>
 
         <button type="submit" name="generate">Generate</button>
     </form>
@@ -86,13 +285,23 @@
         </form>
 
     {% elif subject and body and send_option == "bulk" %}
-        <h2>Bulk Email Editor</h2>
-        <form method="post" action="{% url 'send_bulk' %}" enctype="multipart/form-data">
+        <h2 class="h2">Preview</h2>
+        <form method="post" action="{% url 'send_bulk' %}" enctype="multipart/form-data" class="bulk-send-form">
             {% csrf_token %}
             <label for="subject">Edit Subject:</label>
             <input type="text" name="subject" id="subject" value="{{ subject }}" required>
 
-            <label for="body">Edit Body (use &#123;&#123;name&#125;&#125;, &#123;&#123;phone&#125;&#125;, etc.):</label>
+            <label for="body">
+                Edit Body (use {% templatetag openvariable %}name{% templatetag closevariable %}, 
+                {% templatetag openvariable %}phone{% templatetag closevariable %}, etc.):
+                <img src="{% static 'info.png' %}"
+                    alt="info"
+                    title="Use placeholders like {% templatetag openvariable %}name{% templatetag closevariable %}, 
+                    {% templatetag openvariable %}phone{% templatetag closevariable %} etc. 
+                    These will be replaced by values from your CSV file.
+                    Make sure the placeholder names match the column headers in the csv file exactly."
+                    style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:6px;">
+            </label>
             <textarea name="body" id="body" rows="10" required>{{ body }}</textarea>
 
             <label for="csv_file">Upload CSV File (must include 'email' column):</label>
@@ -101,10 +310,30 @@
             <label for="attachments">Add Attachments (optional):</label>
             <input type="file" name="attachments" multiple>
 
-            <button type="submit">Send All Emails</button>
+            <button type="submit">Send all</button>
         </form>
     {% endif %}
 {% endif %}
+
+<!-- 🎉 Confetti Animation -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script>
+    const msg = document.querySelector('#message');
+    if (msg && msg.textContent.includes('emails sent successfully')) {
+        confetti({
+            particleCount: 120,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        setTimeout(() => {
+            confetti({
+                particleCount: 100,
+                spread: 90,
+                origin: { y: 0.5 }
+            });
+        }, 500);
+    }
+</script>
 
 </body>
 </html>
