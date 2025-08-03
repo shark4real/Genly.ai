@@ -40,6 +40,9 @@ def parse_subject_and_body(text):
     return subject, body.strip()
 
 def generate_email(request):
+    if 'credentials' not in request.session:
+        return redirect('authorize_gmail')
+
     if request.method == 'POST':
         try:
             tone = request.POST.get('tone', '')
@@ -69,16 +72,6 @@ def generate_email(request):
             if send_option == 'single':
                 gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
                 return redirect(gmail_url)
-
-            if 'credentials' not in request.session:
-                request.session['draft'] = {
-                    'subject': subject,
-                    'body': body,
-                    'tone': tone,
-                    'context': context,
-                    'send_option': send_option,
-                }
-                return redirect('authorize_gmail')
 
             return render(request, 'home.html', {
                 'subject': subject,

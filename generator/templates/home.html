@@ -24,9 +24,6 @@
             padding: 15px;
             border-radius: 5px;
         }
-        .hidden {
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -41,73 +38,72 @@
     {% endfor %}
 {% endif %}
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    <label for="tone">Select Tone:</label>
-    <select name="tone" required>
-        <option value="professional" {% if tone == "professional" %}selected{% endif %}>Professional</option>
-        <option value="casual" {% if tone == "casual" %}selected{% endif %}>Casual</option>
-        <option value="convincing" {% if tone == "convincing" %}selected{% endif %}>Convincing</option>
-        <option value="apologetic" {% if tone == "apologetic" %}selected{% endif %}>Apologetic</option>
-    </select>
-
-    <label for="context">Context:</label>
-    <textarea name="context" required>{{ context|default:'' }}</textarea>
-
-    <label for="send_option">Send Mode:</label>
-    <select name="send_option" id="send_option" required>
-        <option value="" disabled {% if not send_option %}selected{% endif %}>Select Mode</option>
-        <option value="single" {% if send_option == "single" %}selected{% endif %}>Single Email</option>
-        <option value="bulk" {% if send_option == "bulk" %}selected{% endif %}>Bulk Email</option>
-    </select>
-
-    <button type="submit" name="generate">Generate</button>
-</form>
-
-{% if subject and body and send_option == "single" %}
-    <h2>Email Preview</h2>
+{% if not is_authenticated %}
+    <p style="color: red;">Please log in with Gmail to use this application.</p>
+    <a href="{% url 'authorize_gmail' %}">
+        <button>Login with Gmail</button>
+    </a>
+{% else %}
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <input type="hidden" name="subject" value="{{ subject }}">
-        <input type="hidden" name="body" value="{{ body }}">
-        <input type="hidden" name="tone" value="{{ tone }}">
-        <input type="hidden" name="context" value="{{ context }}">
-        <input type="hidden" name="send_option" value="{{ send_option }}">
+        <label for="tone">Select Tone:</label>
+        <select name="tone" required>
+            <option value="professional" {% if tone == "professional" %}selected{% endif %}>Professional</option>
+            <option value="casual" {% if tone == "casual" %}selected{% endif %}>Casual</option>
+            <option value="convincing" {% if tone == "convincing" %}selected{% endif %}>Convincing</option>
+            <option value="apologetic" {% if tone == "apologetic" %}selected{% endif %}>Apologetic</option>
+        </select>
 
-        <p><strong>Subject:</strong> {{ subject }}</p>
-        <pre>{{ body }}</pre>
+        <label for="context">Context:</label>
+        <textarea name="context" required>{{ context|default:'' }}</textarea>
 
-        <label for="recipient_email">Recipient Email:</label>
-        <input type="email" name="recipient_email" required placeholder="example@email.com">
-        <button type="submit" name="send_single">Send via Gmail</button>
+        <label for="send_option">Send Mode:</label>
+        <select name="send_option" id="send_option" required>
+            <option value="" disabled {% if not send_option %}selected{% endif %}>Select Mode</option>
+            <option value="single" {% if send_option == "single" %}selected{% endif %}>Single Email</option>
+            <option value="bulk" {% if send_option == "bulk" %}selected{% endif %}>Bulk Email</option>
+        </select>
+
+        <button type="submit" name="generate">Generate</button>
     </form>
 
-{% elif subject and body and send_option == "bulk" %}
-    <h2>Bulk Email Editor</h2>
-    <form method="post" action="{% url 'send_bulk' %}" enctype="multipart/form-data">
-        {% csrf_token %}
-        <label for="subject">Edit Subject:</label>
-        <input type="text" name="subject" id="subject" value="{{ subject }}" required>
+    {% if subject and body and send_option == "single" %}
+        <h2>Email Preview</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="subject" value="{{ subject }}">
+            <input type="hidden" name="body" value="{{ body }}">
+            <input type="hidden" name="tone" value="{{ tone }}">
+            <input type="hidden" name="context" value="{{ context }}">
+            <input type="hidden" name="send_option" value="{{ send_option }}">
 
-        <label for="body">Edit Body (use &#123;&#123;name&#125;&#125;, &#123;&#123;phone&#125;&#125;, etc.):</label>
-        <textarea name="body" id="body" rows="10" required>{{ body }}</textarea>
+            <p><strong>Subject:</strong> {{ subject }}</p>
+            <pre>{{ body }}</pre>
 
-        <label for="csv_file">Upload CSV File (must include 'email' column):</label>
-        <input type="file" name="csv_file" accept=".csv" required>
+            <label for="recipient_email">Recipient Email:</label>
+            <input type="email" name="recipient_email" required placeholder="example@email.com">
+            <button type="submit" name="send_single">Send via Gmail</button>
+        </form>
 
-        <!-- 📎 Attachments -->
-        <label for="attachments">Add Attachments (optional):</label>
-        <input type="file" name="attachments" multiple>
+    {% elif subject and body and send_option == "bulk" %}
+        <h2>Bulk Email Editor</h2>
+        <form method="post" action="{% url 'send_bulk' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="subject">Edit Subject:</label>
+            <input type="text" name="subject" id="subject" value="{{ subject }}" required>
 
-        {% if not is_authenticated %}
-            <p style="color: red;">Login required to send bulk email.</p>
-            <a href="{% url 'authorize_gmail' %}">
-                <button type="button">Login with Gmail</button>
-            </a>
-        {% else %}
+            <label for="body">Edit Body (use &#123;&#123;name&#125;&#125;, &#123;&#123;phone&#125;&#125;, etc.):</label>
+            <textarea name="body" id="body" rows="10" required>{{ body }}</textarea>
+
+            <label for="csv_file">Upload CSV File (must include 'email' column):</label>
+            <input type="file" name="csv_file" accept=".csv" required>
+
+            <label for="attachments">Add Attachments (optional):</label>
+            <input type="file" name="attachments" multiple>
+
             <button type="submit">Send All Emails</button>
-        {% endif %}
-    </form>
+        </form>
+    {% endif %}
 {% endif %}
 
 </body>
