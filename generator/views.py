@@ -127,13 +127,11 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
-                    subject_encoded = quote(subject)
-                    body_encoded = quote(body)
-                    mailto_url = f"mailto:?subject={subject_encoded}&body={body_encoded}"
-                    
-                    return render(request, 'mailto_redirect.html', {
-                        'mailto_url': mailto_url
-                    })
+                    subject_encoded = quote_plus(subject)
+                    body_encoded = quote_plus(body)
+            
+                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={subject_encoded}&body={body_encoded}"
+                    return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
             # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
