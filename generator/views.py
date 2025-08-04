@@ -17,13 +17,14 @@ from email.mime.base import MIMEBase
 from email import encoders
 from django.urls import reverse
 from urllib.parse import quote
+import json
 
 # Allow OAuth2 over http (not recommended for production)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 load_dotenv()
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-CLIENT_SECRETS_FILE = os.path.join(os.path.dirname(__file__), '../client_secret.json')
+creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
 
 def credentials_to_dict(credentials):
     return {
@@ -123,9 +124,11 @@ def bulk_preview(request):
     })
 
 
+
 def authorize_gmail(request):
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
+    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+    flow = Flow.from_client_config(
+        creds_dict,
         scopes=SCOPES,
         redirect_uri='https://genly-ai.onrender.com/oauth2callback/'
     )
@@ -133,14 +136,17 @@ def authorize_gmail(request):
     request.session['state'] = state
     return redirect(auth_url)
 
+
 def oauth2callback(request):
     state = request.session.get('state')
-    flow = Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
+    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
+    flow = Flow.from_client_config(
+        creds_dict,
         scopes=SCOPES,
         state=state,
         redirect_uri='https://genly-ai.onrender.com/oauth2callback/'
     )
+
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
 
