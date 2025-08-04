@@ -217,6 +217,38 @@ def create_message_raw(sender, to, subject, message_html, attachments=None):
 
     return base64.urlsafe_b64encode(message.as_bytes()).decode()
 
+def send_single_email(request):
+    if request.method == 'POST':
+        if 'credentials' not in request.session:
+            return redirect('authorize_gmail')
+
+        credentials = Credentials(**request.session['credentials'])
+        service = build('gmail', 'v1', credentials=credentials)
+
+        to_email = request.POST.get('to_email')
+        subject = request.POST.get('subject')
+        body = request.POST.get('body')
+
+        if not to_email or not subject or not body:
+            messages.error(request, "All fields are required.")
+            return redirect('home')
+
+        message_html = body.replace('\n', '<br>')
+        raw_message = create_message_raw(
+            sender="me",
+            to=to_email,
+            subject=subject,
+            message_html=message_html,
+        )
+
+        try:
+            service.users().messages().send(userId='me', body={'raw': raw_message}).execute()
+            messages.success(request, "Email sent successfully.")
+        except Exception as e:
+            messages.error(request, f"Failed to send email: {e}")
+
+    return redirect('home')
+
 
 def send_bulk_email(request):
     print("🔥 Bulk email function triggered")
