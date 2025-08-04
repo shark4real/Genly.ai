@@ -97,6 +97,11 @@ def generate_email(request):
 
             email_content = response.json()['choices'][0]['message']['content']
             subject, body = parse_subject_and_body(email_content)
+            
+            if not subject:
+                subject = "Generated Email"
+            if not body:
+                body = email_content.strip()
 
             if send_option == 'single':
                 if is_mobile(request):
@@ -109,7 +114,11 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
-                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
+                    gmail_url = (
+                        "https://mail.google.com/mail/?view=cm&fs=1"
+                        f"&su={quote(subject)}"
+                        f"&body={quote(body)}"
+                    )
                     return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
 
             request.session['bulk_data'] = {
