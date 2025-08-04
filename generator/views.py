@@ -3,6 +3,7 @@ import requests
 import csv
 import io
 import base64
+from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
 from dotenv import load_dotenv
@@ -61,6 +62,10 @@ def parse_subject_and_body(text):
             subject = "Generated Email"
     return subject, body.strip()
 
+def is_mobile(request):
+    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+    return 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent
+
 def generate_email(request):
     if 'credentials' not in request.session:
         return redirect('authorize_gmail')
@@ -92,10 +97,16 @@ def generate_email(request):
             subject, body = parse_subject_and_body(email_content)
 
             if send_option == 'single':
-                gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
-                return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
+                if is_mobile(request):
+                    # Use mailto on mobile for better compatibility
+                    mailto_url = f"mailto:?{urlencode({'subject': subject, 'body': body})}"
+                    return redirect(mailto_url)
+                else:
+                    # Use Gmail compose link for desktop
+                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
+                    return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
 
-            # Fix for bulk preview without triggering send
+            # Save data in session for bulk preview
             request.session['bulk_data'] = {
                 'subject': subject,
                 'body': body,
@@ -111,6 +122,18 @@ def generate_email(request):
     return render(request, 'home.html', {
         'is_authenticated': 'credentials' in request.session
     })
+
+def bulk_preview(request):
+    data = request.session.pop('bulk_data', None)
+    if not data:
+        return redirect('home')
+
+    return render(request, 'home.html', {
+        **data,
+        'preview_mode': True,
+        'is_authenticated': True
+    })
+
 
 def bulk_preview(request):
     data = request.session.pop('bulk_data', None)
