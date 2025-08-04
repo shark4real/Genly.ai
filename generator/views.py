@@ -127,7 +127,7 @@ def authorize_gmail(request):
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
-        redirect_uri='https://genly-ai.onrender.com/oauth2callback/'cl
+        redirect_uri='https://genly-ai.onrender.com/oauth2callback/'
     )
     auth_url, state = flow.authorization_url(prompt='consent')
     request.session['state'] = state
