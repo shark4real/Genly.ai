@@ -6,6 +6,7 @@ import base64
 import json
 from urllib.parse import quote, urlencode
 from django.utils.http import urlencode
+from django.http import HttpResponseRedirect
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
 from dotenv import load_dotenv
@@ -126,8 +127,11 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
-                    mailto_url = f"mailto:?subject={quote(subject)}&body={quote(body)}"
-                    return redirect(mailto_url)
+                    subject_encoded = quote(subject)
+                    body_encoded = quote(body)
+                    
+                    mailto_url = f"mailto:?subject={subject_encoded}&body={body_encoded}"
+                    return HttpResponseRedirect(mailto_url)
             # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
