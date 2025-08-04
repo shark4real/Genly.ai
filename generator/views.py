@@ -3,6 +3,7 @@ import requests
 import csv
 import io
 import base64
+from urllib.parse import quote, urlencode
 from django.http import HttpResponseRedirect
 from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
@@ -98,15 +99,20 @@ def generate_email(request):
             subject, body = parse_subject_and_body(email_content)
 
             if send_option == 'single':
-                gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
                 if is_mobile(request):
-                    # Use mailto on mobile for better compatibility
-                    mailto_url = f"mailto:?{urlencode({'subject': subject, 'body': body})}"
-                    return HttpResponseRedirect(mailto_url)
+                    # Show editable preview on mobile
+                    return render(request, 'mobile_preview.html', {
+                        'subject': subject,
+                        'body': body,
+                        'context': context,
+                        'tone': tone,
+                    })
                 else:
+                    # Redirect to Gmail on desktop
+                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
                     return redirect(gmail_url)
 
-            # Save data in session for bulk preview
+            # For bulk preview
             request.session['bulk_data'] = {
                 'subject': subject,
                 'body': body,
@@ -122,6 +128,7 @@ def generate_email(request):
     return render(request, 'home.html', {
         'is_authenticated': 'credentials' in request.session
     })
+
 
 def bulk_preview(request):
     data = request.session.pop('bulk_data', None)
