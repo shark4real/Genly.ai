@@ -1,4 +1,4 @@
-{% load static %}
+<!-- templates/redirect_to_gmail.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script>
         setTimeout(function() {
-            window.location.href = "{{ gmail_url }}";
+            window.location.href = "{{ gmail_url|escapejs }}";
         }, 1000);
     </script>
 </head>
 <body style="text-align: center; font-family: sans-serif; padding: 50px;">
-    <h2>Redirecting you to Gmail...</h2>
-    <p>If it doesn't open automatically, <a href="{{ gmail_url }}">click here</a>.</p>
+    <h2>Opening Gmail Compose Window...</h2>
+    <p>If it doesn't open automatically, <a href="{{ gmail_url }}" target="_blank">click here</a>.</p>
 </body>
 </html>
