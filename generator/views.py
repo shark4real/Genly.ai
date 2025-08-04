@@ -93,7 +93,7 @@ def generate_email(request):
 
             if send_option == 'single':
                 gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
-                return redirect(gmail_url)
+                return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
 
             # Fix for bulk preview without triggering send
             request.session['bulk_data'] = {
