@@ -6,6 +6,7 @@ import base64
 import json
 from urllib.parse import quote, urlencode
 from urllib.parse import quote_plus 
+from urllib.parse import quote_plus as urlquote_plus
 from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
