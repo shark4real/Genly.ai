@@ -3,14 +3,16 @@ import requests
 import csv
 import io
 import base64
+import json
 from urllib.parse import quote, urlencode
-from django.http import HttpResponseRedirect
 from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
 from dotenv import load_dotenv
+from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.urls import reverse
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
 from googleapiclient.discovery import build
@@ -18,13 +20,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from django.urls import reverse
-from urllib.parse import quote
-import json
 
-# Allow OAuth2 over http (not recommended for production)
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 load_dotenv()
+
+if settings.DEBUG:
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
@@ -100,19 +100,18 @@ def generate_email(request):
 
             if send_option == 'single':
                 if is_mobile(request):
-                    # Show editable preview on mobile
                     return render(request, 'mobile_preview.html', {
                         'subject': subject,
                         'body': body,
-                        'context': context,
                         'tone': tone,
+                        'context': context,
+                        'send_option': send_option,
+                        'is_authenticated': True
                     })
                 else:
-                    # Redirect to Gmail on desktop
                     gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
-                    return redirect(gmail_url)
+                    return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
 
-            # For bulk preview
             request.session['bulk_data'] = {
                 'subject': subject,
                 'body': body,
@@ -129,7 +128,6 @@ def generate_email(request):
         'is_authenticated': 'credentials' in request.session
     })
 
-
 def bulk_preview(request):
     data = request.session.pop('bulk_data', None)
     if not data:
@@ -140,41 +138,24 @@ def bulk_preview(request):
         'preview_mode': True,
         'is_authenticated': True
     })
-
-
-def bulk_preview(request):
-    data = request.session.pop('bulk_data', None)
-    if not data:
-        return redirect('home')
-
-    return render(request, 'home.html', {
-        **data,
-        'preview_mode': True,
-        'is_authenticated': True
-    })
-
-
 
 def authorize_gmail(request):
-    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
     flow = Flow.from_client_config(
         creds_dict,
         scopes=SCOPES,
-        redirect_uri='https://genly-ai.onrender.com/oauth2callback/'
+        redirect_uri=os.getenv("REDIRECT_URI_DEV") if settings.DEBUG else os.getenv("REDIRECT_URI_PROD")
     )
     auth_url, state = flow.authorization_url(prompt='consent')
     request.session['state'] = state
     return redirect(auth_url)
 
-
 def oauth2callback(request):
     state = request.session.get('state')
-    creds_dict = json.loads(os.getenv("GOOGLE_CREDENTIALS_JSON"))
     flow = Flow.from_client_config(
         creds_dict,
         scopes=SCOPES,
         state=state,
-        redirect_uri='https://genly-ai.onrender.com/oauth2callback/'
+        redirect_uri=os.getenv("REDIRECT_URI_DEV") if settings.DEBUG else os.getenv("REDIRECT_URI_PROD")
     )
 
     flow.fetch_token(authorization_response=request.build_absolute_uri())
@@ -202,11 +183,9 @@ def create_message_raw(sender, to, subject, message_html, attachments=None):
     message['from'] = sender
     message['subject'] = subject
 
-    # Only attach HTML content — remove plain text duplication
     html_part = MIMEText(message_html, 'html')
     message.attach(html_part)
 
-    # Attach files if any
     if attachments:
         for file in attachments:
             part = MIMEBase('application', 'octet-stream')
@@ -218,40 +197,34 @@ def create_message_raw(sender, to, subject, message_html, attachments=None):
     return base64.urlsafe_b64encode(message.as_bytes()).decode()
 
 def send_single_email(request):
-    if request.method == 'POST':
-        if 'credentials' not in request.session:
-            return redirect('authorize_gmail')
-
+    if request.method == 'POST' and 'credentials' in request.session:
         credentials = Credentials(**request.session['credentials'])
         service = build('gmail', 'v1', credentials=credentials)
 
-        to_email = request.POST.get('to_email')
         subject = request.POST.get('subject')
         body = request.POST.get('body')
-
-        if not to_email or not subject or not body:
-            messages.error(request, "All fields are required.")
-            return redirect('home')
-
-        message_html = body.replace('\n', '<br>')
-        raw_message = create_message_raw(
-            sender="me",
-            to=to_email,
-            subject=subject,
-            message_html=message_html,
-        )
+        recipient = request.POST.get('to')
+        attachments = request.FILES.getlist('attachments')
 
         try:
+            raw_message = create_message_raw(
+                sender='me',
+                to=recipient,
+                subject=subject,
+                message_html=body.replace('\n', '<br>'),
+                attachments=attachments
+            )
             service.users().messages().send(userId='me', body={'raw': raw_message}).execute()
-            messages.success(request, "Email sent successfully.")
+            messages.success(request, "Email sent successfully!")
         except Exception as e:
             messages.error(request, f"Failed to send email: {e}")
 
+        return redirect('home')
+
+    messages.error(request, "Invalid request or not logged in.")
     return redirect('home')
 
-
 def send_bulk_email(request):
-    print("🔥 Bulk email function triggered")
     if request.method != 'POST':
         return redirect('home')
 
@@ -298,7 +271,6 @@ def send_bulk_email(request):
             to_email = row.get('email')
 
             if not to_email:
-                print(f"Row {index+1} skipped — missing 'email'")
                 continue
 
             personalized_html = body_template.render(row).replace('\n', '<br>')
@@ -311,19 +283,12 @@ def send_bulk_email(request):
                 attachments=attachments
             )
 
-            service.users().messages().send(
-                userId='me',
-                body={'raw': raw_message}
-            ).execute()
-
-            #print(f"✅ Email sent to {to_email}")
+            service.users().messages().send(userId='me', body={'raw': raw_message}).execute()
             success_count += 1
 
         except UndefinedError as ue:
-            print(f"⚠️ Placeholder error in row {index+1}: {ue}")
             failure_count += 1
         except Exception as e:
-            print(f"❌ Failed to send to {row.get('email', 'Unknown')}: {e}")
             failure_count += 1
 
     messages.success(request, f"{success_count} emails sent successfully. {failure_count} failed.")
