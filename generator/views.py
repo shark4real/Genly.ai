@@ -129,9 +129,11 @@ def generate_email(request):
                 else:
                     subject_encoded = quote(subject)
                     body_encoded = quote(body)
-                    
                     mailto_url = f"mailto:?subject={subject_encoded}&body={body_encoded}"
-                    return HttpResponseRedirect(mailto_url)
+                    
+                    return render(request, 'mailto_redirect.html', {
+                        'mailto_url': mailto_url
+                    }
             # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
