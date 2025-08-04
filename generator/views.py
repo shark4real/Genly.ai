@@ -5,6 +5,7 @@ import io
 import base64
 import json
 from urllib.parse import quote, urlencode
+from urllib.parse import quote_plus 
 from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
@@ -114,7 +115,7 @@ def generate_email(request):
                 subject = "Generated Email"
             if not body:
                 body = email_content.strip()
-
+                
             if send_option == 'single':
                 if is_mobile(request):
                     return render(request, 'mobile_preview.html', {
@@ -129,11 +130,11 @@ def generate_email(request):
                     print("✅ email_content:", repr(email_content))
                     print("✅ subject:", repr(subject))
                     print("✅ body:", repr(body))
-                    gmail_url = (
-                        "https://mail.google.com/mail/?view=cm&fs=1"
-                        f"&su={quote(subject)}"
-                        f"&body={quote(body)}"
-                    )
+                    
+                    subject_encoded = quote_plus(subject)
+                    body_encoded = quote_plus(body.replace('\n', '\r\n'))
+            
+                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={subject_encoded}&body={body_encoded}"
                     return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
 
             # For bulk mode, store in session and redirect to preview
