@@ -127,7 +127,7 @@ def authorize_gmail(request):
     flow = Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
-        redirect_uri='http://localhost:8000/oauth2callback/'
+        redirect_uri='https://genly-ai.onrender.com/oauth2callback/'cl
     )
     auth_url, state = flow.authorization_url(prompt='consent')
     request.session['state'] = state
@@ -139,7 +139,7 @@ def oauth2callback(request):
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
         state=state,
-        redirect_uri='http://localhost:8000/oauth2callback/'
+        redirect_uri='https://genly-ai.onrender.com/oauth2callback/'
     )
     flow.fetch_token(authorization_response=request.build_absolute_uri())
     credentials = flow.credentials
