@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to Gmail...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        // Attempt auto-redirect after short delay
+        setTimeout(function() {
+            window.location.href = "{{ gmail_url }}";
+        }, 1000);
+    </script>
+</head>
+<body style="text-align: center; font-family: sans-serif; padding: 50px;">
+    <h2>Redirecting you to Gmail...</h2>
+    <p>If it doesn't open automatically, <a href="{{ gmail_url }}">click here</a>.</p>
+</body>
+</html>
