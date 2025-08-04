@@ -1,0 +1,18 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Opening Email App...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        // Auto-trigger mail client after slight delay
+        setTimeout(function() {
+            window.location.href = "{{ mailto_url }}";
+        }, 800);
+    </script>
+</head>
+<body style="font-family: sans-serif; text-align: center; padding: 60px;">
+    <h2>Preparing your email...</h2>
+    <p>If nothing happens, <a href="{{ mailto_url }}">click here</a> to open your email client.</p>
+</body>
+</html>
