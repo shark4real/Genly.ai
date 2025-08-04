@@ -226,10 +226,29 @@
         <button>Login with Gmail</button>
     </a>
 {% else %}
+
+<div id="mobile-info-popup" style="
+    display: none;
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    z-index: 1000;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+"></div>
+
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <label for="tone"> Email Tone:
             <img src="{% static 'info.png' %}"
+                class="info-icon"
                 alt="info"
                 title="Select the style of the email — e.g., 'Professional' for formal messages, 'Casual' for friendly tone, 'Convincing' to persuade, or 'Apologetic' to express regret."
                 style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:3px;">
@@ -245,6 +264,7 @@
         <label for="send_option">Audience Type:
             <img src="{% static 'info.png' %}"
                 alt="info"
+                class="info-icon"
                 title="Choose 'Individual' to send one email or 'Group Send' for personalized bulk emails using a CSV."
                 style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:3px;">
         </label>
@@ -258,6 +278,7 @@
             Message Brief:
             <img src="{% static 'info.png' %}"
                 alt="info"
+                class="info-icon"
                 title="Briefly describe the purpose or situation. E.g., 'Requesting leave for two days due to illness' or 'Announcing a team meeting.'"
                 style="height:14px; width:auto; vertical-align:middle; cursor:pointer; margin-left:3px;">
         </label>
@@ -297,6 +318,7 @@
                 {% templatetag openvariable %}phone{% templatetag closevariable %}, etc.):
                 <img src="{% static 'info.png' %}"
                     alt="info"
+                    class="info-icon"
                     title="Use placeholders like {% templatetag openvariable %}name{% templatetag closevariable %}, 
                     {% templatetag openvariable %}phone{% templatetag closevariable %} etc. 
                     These will be replaced by values from your CSV file.
@@ -335,6 +357,26 @@
         }, 500);
     }
 </script>
+<script>
+    const popup = document.getElementById('mobile-info-popup');
+
+    document.querySelectorAll('.info-icon').forEach(icon => {
+        const message = icon.getAttribute('data-info') || icon.getAttribute('title');
+
+        icon.addEventListener('click', function () {
+            if (window.innerWidth <= 768 && message) {
+                popup.textContent = message;
+                popup.style.display = 'block';
+
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 3000); // Auto-hide after 3s
+            }
+        });
+    });
+</script>
+
+
 
 </body>
 </html>
