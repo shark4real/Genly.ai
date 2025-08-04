@@ -128,7 +128,7 @@ def generate_email(request):
                     })
                 else:
                     subject_encoded = quote_plus(subject)
-                    body_encoded = quote_plus(body.replace('\n', '\r\n'))
+                    body_encoded = urlquote_plus(body) 
             
                     gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={subject_encoded}&body={body_encoded}"
                     return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
