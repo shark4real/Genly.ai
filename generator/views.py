@@ -3,6 +3,7 @@ import requests
 import csv
 import io
 import base64
+from django.http import HttpResponseRedirect
 from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
@@ -101,9 +102,8 @@ def generate_email(request):
                 if is_mobile(request):
                     # Use mailto on mobile for better compatibility
                     mailto_url = f"mailto:?{urlencode({'subject': subject, 'body': body})}"
-                    return redirect(mailto_url)
+                    return HttpResponseRedirect(mailto_url)
                 else:
-                    # Use Gmail compose link for desktop
                     return redirect(gmail_url)
 
             # Save data in session for bulk preview
