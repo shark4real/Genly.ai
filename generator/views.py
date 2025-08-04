@@ -4,7 +4,7 @@ import csv
 import io
 import base64
 import json
-from urllib.parse import quote_plus
+#from urllib.parse import quote_plus
 from urllib.parse import quote, urlencode
 from django.utils.http import urlencode
 from django.http import HttpResponseRedirect
@@ -54,22 +54,14 @@ def home(request):
     })
 
 def parse_subject_and_body(text):
-    lines = text.strip().split('\n')
-    subject = ""
-    body = ""
-
-    for line in lines:
-        if line.lower().startswith("subject:"):
-            subject = line[len("subject:"):].strip()
-        else:
-            body += line + '\n'
-
-    if not subject:
+    lines = text.strip().split('\n', 1)
+    if lines and lines[0].lower().startswith("subject:"):
+        subject = lines[0][len("subject:"):].strip()
+        body = lines[1].strip() if len(lines) > 1 else ""
+    else:
         subject = "Generated Email"
-    if not body:
-        body = text.strip()
-
-    return subject.strip(), body.strip()
+        body = text
+    return subject, body
 
 
 def is_mobile(request):
@@ -128,11 +120,17 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
-                    subject_encoded = quote_plus(subject)
-                    body_encoded = quote_plus(body)
-            
+                    #print("✅ Subject (raw):", subject)
+                    #print("✅ Body (raw):", body)
+
+                    subject_encoded = quote(subject)
+                    body_encoded = quote(body)
+
                     gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={subject_encoded}&body={body_encoded}"
+                    #print("Final Gmail URL:", gmail_url)
                     return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
+                    
+                
             # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
