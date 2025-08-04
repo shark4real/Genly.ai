@@ -127,10 +127,6 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
-                    print("✅ email_content:", repr(email_content))
-                    print("✅ subject:", repr(subject))
-                    print("✅ body:", repr(body))
-                    
                     subject_encoded = quote_plus(subject)
                     body_encoded = quote_plus(body.replace('\n', '\r\n'))
             
