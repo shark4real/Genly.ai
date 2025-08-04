@@ -5,8 +5,6 @@ import io
 import base64
 import json
 from urllib.parse import quote, urlencode
-from urllib.parse import quote_plus 
-from urllib.parse import quote_plus as urlquote_plus
 from django.utils.http import urlencode
 from jinja2 import Template, StrictUndefined
 from jinja2.exceptions import UndefinedError
@@ -128,12 +126,8 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
-                    subject_encoded = quote_plus(subject)
-                    body_encoded = urlquote_plus(body) 
-            
-                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={subject_encoded}&body={body_encoded}"
-                    return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
-
+                    mailto_url = f"mailto:?subject={quote(subject)}&body={quote(body)}"
+                    return redirect(mailto_url)
             # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
