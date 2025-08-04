@@ -97,14 +97,14 @@ def generate_email(request):
             subject, body = parse_subject_and_body(email_content)
 
             if send_option == 'single':
+                gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
                 if is_mobile(request):
                     # Use mailto on mobile for better compatibility
                     mailto_url = f"mailto:?{urlencode({'subject': subject, 'body': body})}"
                     return redirect(mailto_url)
                 else:
                     # Use Gmail compose link for desktop
-                    gmail_url = f"https://mail.google.com/mail/?view=cm&fs=1&su={quote(subject)}&body={quote(body)}"
-                    return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
+                    return redirect(gmail_url)
 
             # Save data in session for bulk preview
             request.session['bulk_data'] = {
