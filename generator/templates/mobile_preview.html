@@ -1,19 +1,95 @@
-{% extends "base.html" %}
-{% block content %}
-<div style="max-width: 600px; margin: auto; padding: 20px;">
-    <h2>Preview & Send Email</h2>
-    <form method="post" action="{% url 'send_single_email' %}">
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Genly.ai - Mobile Preview</title>
+    <link rel="icon" type="image/png" href="{% static 'myfavicon.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #001F54;
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: 300;
+            font-size: 1rem;
+        }
+        input[type="text"],
+        input[type="email"],
+        textarea,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            background-color: #001F54;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            width: 100%;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #fff;
+            color: #001F54;
+            border: 1px solid #001F54;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📧 Email Preview (Mobile)</h2>
+    <form method="POST" action="{% url 'send_single_email' %}" enctype="multipart/form-data">
         {% csrf_token %}
-        <label>To:</label>
-        <input type="email" name="to_email" required class="form-control" placeholder="recipient@example.com"><br>
 
-        <label>Subject:</label>
-        <input type="text" name="subject" value="{{ subject }}" class="form-control"><br>
+        <label for="to">Recipient Email</label>
+        <input type="email" name="to" required placeholder="e.g. example@email.com">
 
-        <label>Body:</label>
-        <textarea name="body" rows="10" class="form-control">{{ body }}</textarea><br>
+        <label for="subject">Subject</label>
+        <input type="text" name="subject" value="{{ subject|default:'' }}" required>
 
-        <button type="submit" class="btn btn-primary">Send Email</button>
+        <label for="body">Email Body</label>
+        <textarea name="body" rows="10" required>{{ body|default:'' }}</textarea>
+
+        <label for="attachments">Attachments (optional)</label>
+        <input type="file" name="attachments" multiple>
+
+        <button type="submit">Send Email</button>
     </form>
 </div>
-{% endblock %}
+
+</body>
+</html>
