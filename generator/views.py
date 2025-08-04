@@ -133,7 +133,7 @@ def generate_email(request):
                     
                     return render(request, 'mailto_redirect.html', {
                         'mailto_url': mailto_url
-                    }
+                    })
             # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
