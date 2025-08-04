@@ -95,9 +95,15 @@ def generate_email(request):
             response = requests.post(api_url, headers=headers, json=payload)
             response.raise_for_status()
 
-            email_content = response.json()['choices'][0]['message']['content']
+            email_content = response.json().get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+
+            if not email_content:
+                messages.error(request, "Email generation failed. Please try again.")
+                return redirect('home')
+
             subject, body = parse_subject_and_body(email_content)
-            
+
+            # Fallbacks if parsing fails
             if not subject:
                 subject = "Generated Email"
             if not body:
@@ -121,6 +127,7 @@ def generate_email(request):
                     )
                     return render(request, 'redirect_to_gmail.html', {'gmail_url': gmail_url})
 
+            # For bulk mode, store in session and redirect to preview
             request.session['bulk_data'] = {
                 'subject': subject,
                 'body': body,
@@ -136,6 +143,7 @@ def generate_email(request):
     return render(request, 'home.html', {
         'is_authenticated': 'credentials' in request.session
     })
+
 
 def bulk_preview(request):
     data = request.session.pop('bulk_data', None)
