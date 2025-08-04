@@ -52,17 +52,23 @@ def home(request):
     })
 
 def parse_subject_and_body(text):
-    lines = text.strip().split('\n', 1)
+    lines = text.strip().split('\n')
     subject = ""
-    body = text
-    if lines:
-        first_line = lines[0].strip().lower()
-        if first_line.startswith("subject:"):
-            subject = lines[0][len("subject:"):].strip()
-            body = lines[1] if len(lines) > 1 else ""
+    body = ""
+
+    for line in lines:
+        if line.lower().startswith("subject:"):
+            subject = line[len("subject:"):].strip()
         else:
-            subject = "Generated Email"
-    return subject, body.strip()
+            body += line + '\n'
+
+    if not subject:
+        subject = "Generated Email"
+    if not body:
+        body = text.strip()
+
+    return subject.strip(), body.strip()
+
 
 def is_mobile(request):
     user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
@@ -120,6 +126,9 @@ def generate_email(request):
                         'is_authenticated': True
                     })
                 else:
+                    print("✅ email_content:", repr(email_content))
+                    print("✅ subject:", repr(subject))
+                    print("✅ body:", repr(body))
                     gmail_url = (
                         "https://mail.google.com/mail/?view=cm&fs=1"
                         f"&su={quote(subject)}"
