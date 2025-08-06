@@ -1,4 +1,4 @@
-# Genly.ai 💌 – AI-Powered Smart Email Generator & Bulk Sender
+# Genly.ai  – AI-Powered Smart Email Generator & Bulk Sender
 
 Genly.ai is a powerful, Gmail-integrated web application that helps users generate and send high-quality, tone-adapted emails using cutting-edge NLP models (e.g., Mistral 7B via OpenRouter). It offers both **single** and **bulk email** workflows, advanced preview options, Gmail API integration, CSV-based personalization, and mobile-first flexibility.
 
