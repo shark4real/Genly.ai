@@ -133,9 +133,8 @@ Then open [http://localhost:8000](http://localhost:8000)
 
 ---
 
-## 📜 License
-
-MIT License – see [`LICENSE`](LICENSE) for full text.
+## 📄 License
+This project is licensed under the [CC BY-NC 4.0 License](https://creativecommons.org/licenses/by-nc/4.0/) — non-commercial use only.
 
 ---
 
